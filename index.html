@@ -6,13 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family: Arial, sans-serif;
-}
-
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
 body{
   background:linear-gradient(135deg,#667eea,#764ba2);
   min-height:100vh;
@@ -20,7 +14,6 @@ body{
   flex-direction:column;
   align-items:center;
 }
-
 .header{
   width:100%;
   padding:18px;
@@ -28,92 +21,112 @@ body{
   font-size:22px;
   font-weight:bold;
   text-align:center;
-  letter-spacing:1px;
 }
-
 .card{
   background:white;
-  width:90%;
-  max-width:420px;
-  padding:30px;
-  margin-top:50px;
+  width:95%;
+  max-width:450px;
+  padding:20px;
+  margin-top:30px;
   border-radius:20px;
   box-shadow:0 15px 30px rgba(0,0,0,0.2);
+}
+h1{
   text-align:center;
+  margin-bottom:15px;
 }
-
-.card h1{
-  font-size:26px;
-  margin-bottom:10px;
-  color:#333;
+input, button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  font-size:16px;
 }
-
-.card p{
-  color:#777;
-  font-size:14px;
-  margin-bottom:25px;
-}
-
-.select-btn{
+button{
   background:#ff4b2b;
   color:white;
-  padding:18px;
   border:none;
-  width:100%;
-  font-size:18px;
-  border-radius:12px;
+  border-radius:10px;
   cursor:pointer;
-  box-shadow:0 8px 20px rgba(0,0,0,0.3);
-  transition:0.3s;
-  display:block;
 }
-
-.select-btn:hover{
-  transform:scale(1.05);
+button:hover{
+  opacity:0.9;
 }
-
-input[type="file"]{
-  display:none;
+.preview img{
+  width:100%;
+  margin-top:10px;
+  border-radius:10px;
 }
-
-.footer{
-  position:absolute;
-  bottom:15px;
+input[type="file"]{display:none;}
+.select-btn{
+  background:#222;
   color:white;
-  font-size:13px;
+  padding:14px;
+  border-radius:10px;
+  text-align:center;
+  cursor:pointer;
+}
+.footer{
+  margin-top:20px;
+  color:white;
+  font-size:12px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-📄 Aamin PDF Studio
-</div>
+<div class="header">📄 Aamin PDF Studio</div>
 
 <div class="card">
-  <h1>Image to PDF Converter</h1>
-  <p>Convert your images into high-quality PDF instantly.</p>
+<h1>Image to PDF</h1>
 
-  <label for="imageInput" class="select-btn">
-    Select Images & Create PDF
-  </label>
+<label for="imageInput" class="select-btn">Select Images</label>
+<input type="file" id="imageInput" multiple accept="image/*">
 
-  <input type="file" id="imageInput" multiple accept="image/*">
+<input type="text" id="fileName" placeholder="Rename PDF file (example: myfile)">
+
+<select id="cropOption">
+  <option value="full">Full Page</option>
+  <option value="margin">With Margin</option>
+</select>
+
+<div class="preview" id="preview"></div>
+
+<button onclick="generatePDF()">Download PDF</button>
+
 </div>
 
-<div class="footer">
-© 2026 Aamin PDF Studio
-</div>
+<div class="footer">© 2026 Aamin PDF Studio</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
 
-document.getElementById("imageInput").addEventListener("change", function(event){
+let images = [];
 
-  const files = event.target.files;
-  if(files.length === 0) return;
+document.getElementById("imageInput").addEventListener("change", function(event){
+  images = [];
+  document.getElementById("preview").innerHTML = "";
+
+  Array.from(event.target.files).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = function(e){
+      images.push(e.target.result);
+
+      let img = document.createElement("img");
+      img.src = e.target.result;
+      document.getElementById("preview").appendChild(img);
+    }
+    reader.readAsDataURL(file);
+  });
+});
+
+function generatePDF(){
+
+  if(images.length === 0){
+    alert("Select images first");
+    return;
+  }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p','mm','a4');
@@ -121,32 +134,26 @@ document.getElementById("imageInput").addEventListener("change", function(event)
   let pageWidth = doc.internal.pageSize.getWidth();
   let pageHeight = doc.internal.pageSize.getHeight();
 
-  let loaded = 0;
+  let crop = document.getElementById("cropOption").value;
 
-  Array.from(files).forEach((file, index) => {
+  images.forEach((imgData,index)=>{
 
-    const reader = new FileReader();
+    if(index!==0) doc.addPage();
 
-    reader.onload = function(e){
-
-      if(index !== 0){
-        doc.addPage();
-      }
-
-      doc.addImage(e.target.result,'JPEG',0,0,pageWidth,pageHeight);
-
-      loaded++;
-
-      if(loaded === files.length){
-        doc.save("Aamin-PDF-Studio.pdf");
-      }
+    if(crop==="full"){
+      doc.addImage(imgData,'JPEG',0,0,pageWidth,pageHeight);
+    }else{
+      doc.addImage(imgData,'JPEG',10,10,pageWidth-20,pageHeight-20);
     }
-
-    reader.readAsDataURL(file);
 
   });
 
-});
+  let name = document.getElementById("fileName").value.trim();
+  if(name==="") name="Aamin-PDF-Studio";
+
+  doc.save(name + ".pdf");
+}
+
 </script>
 
 </body>
