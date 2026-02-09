@@ -1,55 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aamin PDF Studio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#f3f4f6;
-  text-align:center;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+body{background:#F3F3F7;text-align:center;color:#333;}
 
-header{
-  background:linear-gradient(45deg,#111,#333);
-  color:white;
-  padding:15px;
+.header{
+  background:white;
+  padding:20px;
   font-size:22px;
   font-weight:bold;
+  border-bottom:1px solid #ddd;
 }
 
-.controls{
-  padding:15px;
-}
-
-input,button{
-  margin:8px;
-  padding:10px;
-  font-size:14px;
-}
-
-button{
-  background:black;
+.main-btn{
+  background:#E5322D;
   color:white;
   border:none;
+  padding:18px;
+  width:90%;
+  max-width:350px;
+  margin:30px auto;
+  font-size:18px;
+  font-weight:bold;
+  border-radius:10px;
+  box-shadow:0 6px 15px rgba(229,50,45,0.4);
   cursor:pointer;
 }
 
-.preview{
-  margin-top:20px;
+.card{
+  background:white;
+  max-width:400px;
+  margin:20px auto;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.08);
 }
+
+.card input{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+
+.card button{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.download-btn{background:#E5322D;color:white;}
+.secondary-btn{background:#f1f1f1;}
+
+.preview{margin:20px auto;}
 
 .page{
   width:210mm;
   height:297mm;
   max-width:95%;
   background:white;
-  margin:20px auto;
+  margin:15px auto;
   box-shadow:0 5px 20px rgba(0,0,0,0.3);
   position:relative;
   overflow:hidden;
@@ -61,171 +83,136 @@ button{
   object-fit:contain;
 }
 
+.page-number{
+  position:absolute;
+  bottom:5px;
+  right:10px;
+  font-size:12px;
+  color:#555;
+}
+
 .watermark{
   position:absolute;
-  bottom:20px;
-  right:20px;
-  opacity:0.3;
-  font-size:18px;
-}
-
-.pagenumber{
-  position:absolute;
-  bottom:10px;
+  top:50%;
   left:50%;
-  transform:translateX(-50%);
-  font-size:14px;
-  opacity:0.7;
+  transform:translate(-50%,-50%);
+  font-size:40px;
+  color:rgba(0,0,0,0.08);
+  pointer-events:none;
 }
-
-.deleteBtn{
-  position:absolute;
-  top:5px;
-  right:5px;
-  background:red;
-  color:white;
-  border:none;
-  padding:5px;
-  font-size:12px;
-}
-
-.zoom{
-  transform:scale(1.2);
-}
-
 </style>
 </head>
+
 <body>
 
-<header>Aamin PDF Studio</header>
+<div class="header">📄 Aamin PDF Studio</div>
 
-<div class="controls">
-  <input type="text" id="docName" placeholder="Enter File Name">
-  <br>
-  <input type="file" id="fileInput" multiple accept="image/*">
-  <input type="file" accept="image/*" capture="environment" onchange="handleCamera(event)">
-  <br>
-  <button onclick="toggleZoom()">Zoom Preview</button>
-  <button onclick="generatePDF()">Download PDF</button>
+<button class="main-btn" onclick="document.getElementById('fileInput').click()">
+Select JPG Images
+</button>
+
+<input type="file" id="fileInput" multiple accept="image/*" hidden>
+
+<div class="card">
+  <input type="text" id="docName" placeholder="Rename file before download">
+  <button class="secondary-btn" onclick="applyBW()">Black & White Preview</button>
+  <button class="secondary-btn" onclick="cropImages()">Crop Preview</button>
+  <button class="download-btn" onclick="generatePDF()">Download PDF</button>
 </div>
 
-<div class="preview" id="preview"></div>
+<div id="preview" class="preview"></div>
 
 <script>
 const { jsPDF } = window.jspdf;
 let images = [];
-let zoomed = false;
 
 document.getElementById("fileInput").addEventListener("change", function(e){
-  Array.from(e.target.files).forEach(file=>{
-    let reader = new FileReader();
-    reader.onload = function(evt){
-      addImage(evt.target.result);
-    }
-    reader.readAsDataURL(file);
-  });
-});
+  images = [];
+  document.getElementById("preview").innerHTML = "";
 
-function handleCamera(event){
-  let file = event.target.files[0];
-  if(file){
+  for(let file of e.target.files){
     let reader = new FileReader();
-    reader.onload = function(evt){
-      addImage(evt.target.result);
+    reader.onload = function(event){
+      images.push(event.target.result);
+      addPreview(event.target.result);
     }
     reader.readAsDataURL(file);
   }
-}
+});
 
-function addImage(src){
-  images.push(src);
+function addPreview(src){
+  let pageCount = document.querySelectorAll(".page").length + 1;
 
   let page = document.createElement("div");
   page.className="page";
 
   let img = document.createElement("img");
-  img.src = src;
+  img.src=src;
 
-  let del = document.createElement("button");
-  del.innerText="X";
-  del.className="deleteBtn";
-  del.onclick=()=>{
-    page.remove();
-    images = images.filter(i=>i!==src);
-    updatePageNumbers();
-  };
+  let number = document.createElement("div");
+  number.className="page-number";
+  number.innerText="Page "+pageCount;
 
-  let watermark = document.createElement("div");
+  let watermark=document.createElement("div");
   watermark.className="watermark";
-  watermark.innerText=document.getElementById("docName").value || "Aamin PDF Studio";
-
-  let pageNum = document.createElement("div");
-  pageNum.className="pagenumber";
+  watermark.innerText="Aamin PDF";
 
   page.appendChild(img);
-  page.appendChild(del);
+  page.appendChild(number);
   page.appendChild(watermark);
-  page.appendChild(pageNum);
 
   document.getElementById("preview").appendChild(page);
-  updatePageNumbers();
 }
 
-function updatePageNumbers(){
-  let pages = document.querySelectorAll(".page");
-  pages.forEach((p,i)=>{
-    p.querySelector(".pagenumber").innerText="Page "+(i+1);
+function applyBW(){
+  document.querySelectorAll(".page img").forEach(img=>{
+    img.style.filter="grayscale(100%) contrast(120%)";
   });
 }
 
-function toggleZoom(){
-  zoomed=!zoomed;
-  document.querySelectorAll(".page").forEach(p=>{
-    if(zoomed) p.classList.add("zoom");
-    else p.classList.remove("zoom");
+function cropImages(){
+  document.querySelectorAll(".page img").forEach(img=>{
+    img.style.objectFit="cover";
   });
 }
 
-function generatePDF(){
+async function generatePDF(){
   if(images.length===0){
-    alert("No image selected");
+    alert("Select images first!");
     return;
   }
 
-  let doc = new jsPDF('p','mm','a4');
-  let width = doc.internal.pageSize.getWidth();
-  let height = doc.internal.pageSize.getHeight();
+  let name=document.getElementById("docName").value.trim() || "Aamin-PDF";
+  let doc=new jsPDF('p','mm','a4');
 
-  images.forEach((img,index)=>{
-    if(index!==0) doc.addPage();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-    let imgObj = new Image();
-    imgObj.src = img;
+  for(let i=0;i<images.length;i++){
+    if(i!==0) doc.addPage();
 
-    let imgWidth = imgObj.width;
-    let imgHeight = imgObj.height;
+    await new Promise(resolve=>{
+      let img = new Image();
+      img.onload = function(){
 
-    let ratio = Math.min(width / imgWidth, height / imgHeight);
-    let newWidth = imgWidth * ratio;
-    let newHeight = imgHeight * ratio;
+        let ratio = Math.min(pageWidth/img.width, pageHeight/img.height);
+        let newWidth = img.width * ratio;
+        let newHeight = img.height * ratio;
 
-    let x 📄 = (width - newWidth) / 2;
-    let y = (height - newHeight) / 2;
+        let x = (pageWidth - newWidth)/2;
+        let y = (pageHeight - newHeight)/2;
 
-    doc.addImage(img,'JPEG',x,y,newWidth,newHeight);
+        doc.addImage(img,'JPEG',x,y,newWidth,newHeight);
+        doc.setFontSize(10);
+        doc.text("Page "+(i+1), pageWidth-25, pageHeight-10);
 
-    doc.setFontSize(10);
-    doc.text("Page "+(index+1),width/2,height-5,{align:'center'});
+        resolve();
+      };
+      img.src = images[i];
+    });
+  }
 
-    let name = document.getElementById("docName").value;
-    if(name){
-      doc.setTextColor(150);
-      doc.text(name,width-20,height-10);
-    }
-  });
-
-  let filename = document.getElementById("docName").value || "Aamin-PDF";
-  doc.save(filename+".pdf");
+  doc.save(name+".pdf");
 }
 </script>
 
