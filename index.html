@@ -6,37 +6,81 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{
+*{
   margin:0;
-  font-family: Arial;
-  background:#f2f2f2;
+  padding:0;
+  box-sizing:border-box;
+  font-family: Arial, sans-serif;
 }
+
+body{
+  background:linear-gradient(135deg,#ff4e50,#f9d423);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* Header */
 .header{
-  background:#000;
+  width:100%;
+  padding:15px;
   color:white;
+  font-size:20px;
+  font-weight:bold;
   text-align:center;
-  padding:15px;
-  font-size:18px;
 }
-.container{
-  padding:15px;
+
+/* Card Section */
+.card{
+  background:white;
+  width:90%;
+  max-width:400px;
+  padding:25px;
+  margin-top:40px;
+  border-radius:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+  text-align:center;
 }
-input, button{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  font-size:16px;
+
+.card h1{
+  font-size:24px;
+  margin-bottom:10px;
 }
-button{
-  background:black;
+
+.card p{
+  color:gray;
+  font-size:14px;
+  margin-bottom:20px;
+}
+
+/* Big Button */
+.select-btn{
+  background:#e53935;
   color:white;
+  padding:18px;
   border:none;
-}
-.preview img{
   width:100%;
-  margin-top:10px;
-  border-radius:8px;
-  filter: grayscale(100%);
+  font-size:18px;
+  border-radius:12px;
+  cursor:pointer;
+  box-shadow:0 6px 15px rgba(0,0,0,0.3);
+  transition:0.3s;
+}
+
+.select-btn:hover{
+  transform:scale(1.05);
+}
+
+input[type="file"]{
+  display:none;
+}
+
+.footer{
+  position:absolute;
+  bottom:10px;
+  color:white;
+  font-size:12px;
 }
 </style>
 </head>
@@ -44,94 +88,28 @@ button{
 <body>
 
 <div class="header">
-Doc Scanner Pro
+📄 Doc Scanner Pro
 </div>
 
-<div class="container">
+<div class="card">
+  <h1>JPG to PDF</h1>
+  <p>Convert images to PDF in seconds. Fast & Easy.</p>
 
-<!-- Default Auto Name -->
-<input type="text" id="name" value="Scanned by Aamin046" placeholder="Enter Your Name">
+  <label for="imageInput" class="select-btn">
+    Select Images
+  </label>
 
-<input type="file" id="imageInput" accept="image/*" multiple>
-
-<div id="preview"></div>
-
-<button onclick="generatePDF()">Download PDF</button>
-
+  <input type="file" id="imageInput" multiple accept="image/*">
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<div class="footer">
+© 2026 Doc Scanner Pro
+</div>
 
 <script>
-
-let uploadedImages = [];
-
-document.getElementById("imageInput").addEventListener("change", function(event){
-  const files = event.target.files;
-  uploadedImages = [];
-  document.getElementById("preview").innerHTML = "";
-
-  if(files.length > 500){
-    alert("Maximum 500 images allowed");
-    return;
-  }
-
-  Array.from(files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = function(e){
-      uploadedImages.push(e.target.result);
-
-      let img = document.createElement("img");
-      img.src = e.target.result;
-      document.getElementById("preview").appendChild(img);
-    }
-    reader.readAsDataURL(file);
-  });
+document.getElementById("imageInput").addEventListener("change", function(){
+  alert("Images Selected Successfully!");
 });
-
-function generatePDF(){
-
-  if(uploadedImages.length === 0){
-    alert("Upload images first");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p','mm','a4');
-  const name = document.getElementById("name").value;
-
-  let pageWidth = doc.internal.pageSize.getWidth();
-  let pageHeight = doc.internal.pageSize.getHeight();
-
-  uploadedImages.forEach((image, index)=>{
-
-    if(index !== 0){
-      doc.addPage();
-    }
-
-    let img = new Image();
-    img.src = image;
-
-    doc.addImage(image,'JPEG',0,0,pageWidth,pageHeight);
-
-    // Watermark
-    if(name){
-      doc.setFontSize(30);
-      doc.setTextColor(150);
-      doc.text(name, pageWidth/2, pageHeight/2, {align:"center", angle:45});
-    }
-
-    // Page Number
-    doc.setFontSize(12);
-    doc.setTextColor(0);
-    doc.text("Page " + (index+1) + " of " + uploadedImages.length, 
-             pageWidth/2, pageHeight-10, {align:"center"});
-
-  });
-
-  doc.save("scanned-document.pdf");
-}
-
 </script>
 
 </body>
