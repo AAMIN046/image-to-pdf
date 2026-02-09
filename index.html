@@ -6,97 +6,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
 body{
-  background:linear-gradient(135deg,#667eea,#764ba2);
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-.header{
-  width:100%;
-  padding:18px;
-  color:white;
-  font-size:22px;
-  font-weight:bold;
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(135deg,#1e3c72,#2a5298);
   text-align:center;
+  color:white;
 }
-.card{
+.container{
   background:white;
+  color:black;
   width:95%;
   max-width:450px;
+  margin:20px auto;
   padding:20px;
-  margin-top:30px;
   border-radius:20px;
-  box-shadow:0 15px 30px rgba(0,0,0,0.2);
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
 }
-h1{
-  text-align:center;
-  margin-bottom:15px;
-}
-input, button{
+button{
   width:100%;
   padding:12px;
   margin-top:10px;
-  font-size:16px;
-}
-button{
-  background:#ff4b2b;
-  color:white;
   border:none;
   border-radius:10px;
+  font-size:16px;
   cursor:pointer;
 }
-button:hover{
-  opacity:0.9;
-}
+.select-btn{background:#222;color:white;}
+.camera-btn{background:#0d6efd;color:white;}
+.download-btn{background:#28a745;color:white;}
 .preview img{
   width:100%;
   margin-top:10px;
   border-radius:10px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);
 }
-input[type="file"]{display:none;}
-.select-btn{
-  background:#222;
-  color:white;
-  padding:14px;
+input,select{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+}
+video{
+  width:100%;
   border-radius:10px;
-  text-align:center;
-  cursor:pointer;
-}
-.footer{
-  margin-top:20px;
-  color:white;
-  font-size:12px;
+  margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">📄 Aamin PDF Studio</div>
+<h2>📄 Aamin PDF Studio Pro</h2>
 
-<div class="card">
-<h1>Image to PDF</h1>
+<div class="container">
 
-<label for="imageInput" class="select-btn">Select Images</label>
-<input type="file" id="imageInput" multiple accept="image/*">
+<button class="select-btn" onclick="document.getElementById('fileInput').click()">Select Images</button>
+<input type="file" id="fileInput" multiple accept="image/*" hidden>
 
-<input type="text" id="fileName" placeholder="Rename PDF file (example: myfile)">
+<button class="camera-btn" onclick="startCamera()">Scan From Camera</button>
 
-<select id="cropOption">
-  <option value="full">Full Page</option>
-  <option value="margin">With Margin</option>
+<video id="video" autoplay hidden></video>
+<button onclick="capturePhoto()" id="captureBtn" hidden>Capture</button>
+
+<input type="text" id="fileName" placeholder="Rename PDF file">
+
+<select id="effect">
+<option value="normal">Normal</option>
+<option value="bw">Black & White Scan</option>
+</select>
+
+<select id="margin">
+<option value="full">Full Page</option>
+<option value="margin">With Margin</option>
 </select>
 
 <div class="preview" id="preview"></div>
 
-<button onclick="generatePDF()">Download PDF</button>
+<button class="download-btn" onclick="generatePDF()">Download PDF</button>
 
 </div>
-
-<div class="footer">© 2026 Aamin PDF Studio</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -104,54 +92,69 @@ input[type="file"]{display:none;}
 
 let images = [];
 
-document.getElementById("imageInput").addEventListener("change", function(event){
-  images = [];
-  document.getElementById("preview").innerHTML = "";
-
-  Array.from(event.target.files).forEach(file=>{
+document.getElementById("fileInput").addEventListener("change", function(e){
+  Array.from(e.target.files).forEach(file=>{
     const reader = new FileReader();
-    reader.onload = function(e){
-      images.push(e.target.result);
-
-      let img = document.createElement("img");
-      img.src = e.target.result;
-      document.getElementById("preview").appendChild(img);
+    reader.onload = function(ev){
+      addImage(ev.target.result);
     }
     reader.readAsDataURL(file);
   });
 });
 
-function generatePDF(){
+function addImage(src){
+  images.push(src);
+  let img=document.createElement("img");
+  img.src=src;
+  document.getElementById("preview").appendChild(img);
+}
 
-  if(images.length === 0){
-    alert("Select images first");
+function startCamera(){
+  let video=document.getElementById("video");
+  video.hidden=false;
+  document.getElementById("captureBtn").hidden=false;
+  navigator.mediaDevices.getUserMedia({video:true})
+  .then(stream=>{video.srcObject=stream;});
+}
+
+function capturePhoto(){
+  let video=document.getElementById("video");
+  let canvas=document.createElement("canvas");
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+  canvas.getContext("2d").drawImage(video,0,0);
+  let imgData=canvas.toDataURL("image/jpeg");
+  addImage(imgData);
+}
+
+function generatePDF(){
+  if(images.length===0){
+    alert("Add images first");
     return;
   }
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p','mm','a4');
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF('p','mm','a4');
+  let width=doc.internal.pageSize.getWidth();
+  let height=doc.internal.pageSize.getHeight();
 
-  let pageWidth = doc.internal.pageSize.getWidth();
-  let pageHeight = doc.internal.pageSize.getHeight();
+  let effect=document.getElementById("effect").value;
+  let margin=document.getElementById("margin").value;
 
-  let crop = document.getElementById("cropOption").value;
-
-  images.forEach((imgData,index)=>{
-
+  images.forEach((img,index)=>{
     if(index!==0) doc.addPage();
 
-    if(crop==="full"){
-      doc.addImage(imgData,'JPEG',0,0,pageWidth,pageHeight);
+    if(margin==="full"){
+      doc.addImage(img,'JPEG',0,0,width,height);
     }else{
-      doc.addImage(imgData,'JPEG',10,10,pageWidth-20,pageHeight-20);
+      doc.addImage(img,'JPEG',10,10,width-20,height-20);
     }
-
   });
 
-  let name = document.getElementById("fileName").value.trim();
-  if(name==="") name="Aamin-PDF-Studio";
+  let name=document.getElementById("fileName").value.trim();
+  if(name==="") name="Aamin-PDF";
 
-  doc.save(name + ".pdf");
+  doc.save(name+".pdf");
 }
 
 </script>
