@@ -8,10 +8,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial, sans-serif;
+}
 
 body{
-  background:#F3F3F7;
+  background:#e4e6eb;
   text-align:center;
   color:#333;
 }
@@ -19,13 +24,13 @@ body{
 /* Header */
 .header{
   background:white;
-  padding:20px;
+  padding:18px;
   font-size:22px;
   font-weight:bold;
   border-bottom:1px solid #ddd;
 }
 
-/* Big Red Button */
+/* Main Button */
 .main-btn{
   background:#E5322D;
   color:white;
@@ -73,40 +78,49 @@ body{
 .secondary-btn{background:#f1f1f1;}
 
 /* Preview */
-.preview{margin:20px auto;}
+.preview{
+  margin:20px auto;
+}
 
+/* Perfect A4 Page */
 .page{
-  width:210mm;
-  height:297mm;
-  max-width:95%;
+  width:95%;
+  max-width:420px;
+  aspect-ratio:210 / 297;
   background:white;
-  margin:15px auto;
-  box-shadow:0 5px 20px rgba(0,0,0,0.3);
+  margin:25px auto;
+  border-radius:6px;
+  box-shadow:
+    0 4px 10px rgba(0,0,0,0.15),
+    0 10px 25px rgba(0,0,0,0.1);
   position:relative;
   overflow:hidden;
 }
 
+/* Image */
 .page img{
   width:100%;
   height:100%;
-  object-fit:cover;   /* FULL FIT */
+  object-fit:contain;
 }
 
+/* Page Number */
 .page-number{
   position:absolute;
-  bottom:5px;
-  right:10px;
+  bottom:8px;
+  right:12px;
   font-size:12px;
-  color:#555;
+  color:#444;
 }
 
+/* Watermark */
 .watermark{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
   font-size:40px;
-  color:rgba(0,0,0,0.08);
+  color:rgba(0,0,0,0.06);
   pointer-events:none;
 }
 </style>
@@ -125,7 +139,7 @@ Select JPG Images
 <div class="card">
   <input type="text" id="docName" placeholder="Rename file before download">
   <button class="secondary-btn" onclick="applyBW()">Black & White Preview</button>
-  <button class="secondary-btn" onclick="resetEffects()">Reset Effects</button>
+  <button class="secondary-btn" onclick="toggleCrop()">Toggle Crop Mode</button>
   <button class="download-btn" onclick="generatePDF()">Download PDF</button>
 </div>
 
@@ -134,8 +148,9 @@ Select JPG Images
 <script>
 const { jsPDF } = window.jspdf;
 let images = [];
+let cropMode = false;
 
-/* File Select */
+/* Upload */
 document.getElementById("fileInput").addEventListener("change", function(e){
   images = [];
   document.getElementById("preview").innerHTML = "";
@@ -150,7 +165,7 @@ document.getElementById("fileInput").addEventListener("change", function(e){
   }
 });
 
-/* Preview Create */
+/* Preview Add */
 function addPreview(src){
   let pageCount = document.querySelectorAll(".page").length + 1;
 
@@ -158,7 +173,7 @@ function addPreview(src){
   page.className="page";
 
   let img = document.createElement("img");
-  img.src=src;
+  img.src = src;
 
   let number = document.createElement("div");
   number.className="page-number";
@@ -175,16 +190,18 @@ function addPreview(src){
   document.getElementById("preview").appendChild(page);
 }
 
-/* Effects */
+/* Black & White */
 function applyBW(){
   document.querySelectorAll(".page img").forEach(img=>{
-    img.style.filter="grayscale(100%) contrast(120%) brightness(110%)";
+    img.style.filter="grayscale(100%) contrast(120%)";
   });
 }
 
-function resetEffects(){
+/* Toggle Crop */
+function toggleCrop(){
+  cropMode = !cropMode;
   document.querySelectorAll(".page img").forEach(img=>{
-    img.style.filter="none";
+    img.style.objectFit = cropMode ? "cover" : "contain";
   });
 }
 
@@ -196,15 +213,11 @@ async function generatePDF(){
   }
 
   let name=document.getElementById("docName").value.trim() || "Aamin-PDF";
+  let doc=new jsPDF('p','mm','a4');
 
-  let doc=new jsPDF({
-    orientation:'portrait',
-    unit:'mm',
-    format:'a4'
-  });
-
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const margin = 5;
 
   for(let i=0;i<images.length;i++){
     if(i!==0) doc.addPage();
@@ -213,15 +226,22 @@ async function generatePDF(){
       let img = new Image();
       img.onload = function(){
 
-        // FULL COVER MODE (No white gap)
-        let ratio = Math.max(pageWidth/img.width, pageHeight/img.height);
+        let usableWidth = pageWidth - (margin*2);
+        let usableHeight = pageHeight - (margin*2);
+
+        let ratio = cropMode
+          ? Math.max(usableWidth/img.width, usableHeight/img.height)
+          : Math.min(usableWidth/img.width, usableHeight/img.height);
+
         let newWidth = img.width * ratio;
         let newHeight = img.height * ratio;
 
         let x = (pageWidth - newWidth)/2;
         let y = (pageHeight - newHeight)/2;
 
-        doc.addImage(img,'JPEG',x,y,newWidth,newHeight,'','FAST');
+        doc.addImage(img,'JPEG',x,y,newWidth,newHeight);
+        doc.setFontSize(10);
+        doc.text("Page "+(i+1), 180, 290);
 
         resolve();
       };
