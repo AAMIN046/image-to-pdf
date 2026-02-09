@@ -21,7 +21,6 @@ body{
   align-items:center;
 }
 
-/* Header */
 .header{
   width:100%;
   padding:15px;
@@ -31,7 +30,6 @@ body{
   text-align:center;
 }
 
-/* Card Section */
 .card{
   background:white;
   width:90%;
@@ -54,7 +52,6 @@ body{
   margin-bottom:20px;
 }
 
-/* Big Button */
 .select-btn{
   background:#e53935;
   color:white;
@@ -66,6 +63,7 @@ body{
   cursor:pointer;
   box-shadow:0 6px 15px rgba(0,0,0,0.3);
   transition:0.3s;
+  display:block;
 }
 
 .select-btn:hover{
@@ -96,7 +94,7 @@ input[type="file"]{
   <p>Convert images to PDF in seconds. Fast & Easy.</p>
 
   <label for="imageInput" class="select-btn">
-    Select Images
+    Select Images & Download PDF
   </label>
 
   <input type="file" id="imageInput" multiple accept="image/*">
@@ -106,9 +104,46 @@ input[type="file"]{
 © 2026 Doc Scanner Pro
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
-document.getElementById("imageInput").addEventListener("change", function(){
-  alert("Images Selected Successfully!");
+
+document.getElementById("imageInput").addEventListener("change", function(event){
+
+  const files = event.target.files;
+  if(files.length === 0) return;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p','mm','a4');
+
+  let pageWidth = doc.internal.pageSize.getWidth();
+  let pageHeight = doc.internal.pageSize.getHeight();
+
+  let loaded = 0;
+
+  Array.from(files).forEach((file, index) => {
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+
+      if(index !== 0){
+        doc.addPage();
+      }
+
+      doc.addImage(e.target.result,'JPEG',0,0,pageWidth,pageHeight);
+
+      loaded++;
+
+      if(loaded === files.length){
+        doc.save("converted.pdf");
+      }
+    }
+
+    reader.readAsDataURL(file);
+
+  });
+
 });
 </script>
 
