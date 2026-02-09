@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Simple Doc Scanner</title>
+<title>Doc Scanner Pro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -34,10 +34,10 @@ button{
 }
 .preview{
   margin-top:15px;
-  text-align:center;
 }
 .preview img{
-  max-width:100%;
+  width:100%;
+  margin-top:10px;
   border-radius:8px;
 }
 </style>
@@ -46,18 +46,17 @@ button{
 <body>
 
 <div class="header">
-Simple Doc Scanner
+Doc Scanner Pro
 </div>
 
 <div class="container">
 
-<input type="text" id="name" placeholder="Enter Your Name">
+<input type="text" id="name" placeholder="Enter Your Name (optional)">
 
-<input type="file" id="imageInput" accept="image/*">
+<!-- MULTIPLE ENABLED -->
+<input type="file" id="imageInput" accept="image/*" multiple>
 
-<div class="preview">
-<img id="previewImg" style="display:none;">
-</div>
+<div class="preview" id="previewContainer"></div>
 
 <button onclick="generatePDF()">Download PDF</button>
 
@@ -67,64 +66,80 @@ Simple Doc Scanner
 
 <script>
 
-let uploadedImage = "";
+let uploadedImages = [];
 
 document.getElementById("imageInput").addEventListener("change", function(event){
-  const file = event.target.files[0];
-  const reader = new FileReader();
+  const files = event.target.files;
+  const previewContainer = document.getElementById("previewContainer");
+  previewContainer.innerHTML = "";
+  uploadedImages = [];
 
-  reader.onload = function(e){
-    uploadedImage = e.target.result;
-    const img = document.getElementById("previewImg");
-    img.src = uploadedImage;
-    img.style.display = "block";
+  if(files.length > 500){
+    alert("Maximum 500 images allowed");
+    return;
   }
 
-  if(file){
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+      uploadedImages.push(e.target.result);
+
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      previewContainer.appendChild(img);
+    }
+
     reader.readAsDataURL(file);
-  }
+  });
 });
 
 function generatePDF(){
+
+  if(uploadedImages.length === 0){
+    alert("Please upload images first");
+    return;
+  }
+
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'mm', 'a4');
+  const name = document.getElementById("name").value;
 
-  let name = document.getElementById("name").value;
+  let pageWidth = doc.internal.pageSize.getWidth();
+  let pageHeight = doc.internal.pageSize.getHeight();
 
-  if(uploadedImage){
+  let count = 0;
 
-    let img = new Image();
-    img.src = uploadedImage;
+  uploadedImages.forEach((image, index) => {
 
-    img.onload = function(){
-
-      let pageWidth = doc.internal.pageSize.getWidth();
-      let pageHeight = doc.internal.pageSize.getHeight();
-
-      let imgWidth = img.width;
-      let imgHeight = img.height;
-
-      let ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-
-      let newWidth = imgWidth * ratio;
-      let newHeight = imgHeight * ratio;
-
-      let x = (pageWidth - newWidth) / 2;
-      let y = (pageHeight - newHeight) / 2;
-
-      doc.addImage(uploadedImage, 'JPEG', x, y, newWidth, newHeight);
-
-      if(name){
-        doc.setFontSize(16);
-        doc.text(name, 10, 15);
-      }
-
-      doc.save("scanned-document.pdf");
+    if(index !== 0){
+      doc.addPage();
     }
 
-  } else {
-    alert("Please upload an image first");
-  }
+    let img = new Image();
+    img.src = image;
+
+    let imgWidth = img.width;
+    let imgHeight = img.height;
+
+    let ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+    let newWidth = imgWidth * ratio;
+    let newHeight = imgHeight * ratio;
+
+    let x = (pageWidth - newWidth) / 2;
+    let y = (pageHeight - newHeight) / 2;
+
+    doc.addImage(image, 'JPEG', x, y, newWidth, newHeight);
+
+    if(name){
+      doc.setFontSize(14);
+      doc.text(name, 10, 15);
+    }
+
+    count++;
+  });
+
+  doc.save("scanned-document.pdf");
 }
 
 </script>
