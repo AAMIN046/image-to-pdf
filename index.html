@@ -2,85 +2,100 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Professional PDF Generator</title>
+<title>Simple Doc Scanner</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
+  margin:0;
   font-family: Arial;
-  padding:20px;
-  background:#f4f4f4;
+  background:#f2f2f2;
+}
+.header{
+  background:#000;
+  color:white;
+  text-align:center;
+  padding:15px;
+  font-size:18px;
 }
 .container{
-  background:white;
-  padding:20px;
-  border-radius:10px;
-  box-shadow:0 0 10px rgba(0,0,0,0.1);
+  padding:15px;
 }
-input, textarea{
+input, button{
   width:100%;
+  padding:12px;
   margin-top:10px;
-  padding:10px;
+  font-size:16px;
 }
 button{
-  margin-top:15px;
-  padding:12px;
-  width:100%;
-  background:#007bff;
+  background:black;
   color:white;
   border:none;
-  font-size:16px;
-  border-radius:6px;
 }
-button:hover{
-  background:#0056b3;
+.preview{
+  margin-top:15px;
+  text-align:center;
+}
+.preview img{
+  max-width:100%;
+  border-radius:8px;
 }
 </style>
-
 </head>
+
 <body>
 
+<div class="header">
+Simple Doc Scanner
+</div>
+
 <div class="container">
-<h2>Create Script Document PDF</h2>
 
-<input type="text" id="title" placeholder="Document Title">
-
-<textarea id="content" rows="8" placeholder="Write your script or document here..."></textarea>
+<input type="text" id="name" placeholder="Enter Your Name">
 
 <input type="file" id="imageInput" accept="image/*">
 
+<div class="preview">
+<img id="previewImg" style="display:none;">
+</div>
+
 <button onclick="generatePDF()">Download PDF</button>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-async function generatePDF(){
+let uploadedImage = "";
+
+document.getElementById("imageInput").addEventListener("change", function(event){
+  const file = event.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    uploadedImage = e.target.result;
+    const img = document.getElementById("previewImg");
+    img.src = uploadedImage;
+    img.style.display = "block";
+  }
+
+  reader.readAsDataURL(file);
+});
+
+function generatePDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  let title = document.getElementById("title").value;
-  let content = document.getElementById("content").value;
-  let imageInput = document.getElementById("imageInput");
+  let name = document.getElementById("name").value;
 
-  doc.setFontSize(18);
-  doc.text(title, 10, 20);
-
-  doc.setFontSize(12);
-  doc.text(content, 10, 35);
-
-  if(imageInput.files.length > 0){
-    let file = imageInput.files[0];
-    let reader = new FileReader();
-
-    reader.onload = function(e){
-      doc.addImage(e.target.result, 'JPEG', 10, 70, 180, 100);
-      doc.save("document.pdf");
-    }
-    reader.readAsDataURL(file);
-  } else {
-    doc.save("document.pdf");
+  if(uploadedImage){
+    doc.addImage(uploadedImage, 'JPEG', 10, 20, 190, 120);
   }
+
+  doc.setFontSize(16);
+  doc.text(name, 10, 15);
+
+  doc.save("scanned-document.pdf");
 }
 </script>
 
