@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Doc Scanner Pro</title>
+<title>Aamin PDF Studio</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -14,7 +14,7 @@
 }
 
 body{
-  background:linear-gradient(135deg,#ff4e50,#f9d423);
+  background:linear-gradient(135deg,#667eea,#764ba2);
   min-height:100vh;
   display:flex;
   flex-direction:column;
@@ -23,37 +23,39 @@ body{
 
 .header{
   width:100%;
-  padding:15px;
+  padding:18px;
   color:white;
-  font-size:20px;
+  font-size:22px;
   font-weight:bold;
   text-align:center;
+  letter-spacing:1px;
 }
 
 .card{
   background:white;
   width:90%;
-  max-width:400px;
-  padding:25px;
-  margin-top:40px;
+  max-width:420px;
+  padding:30px;
+  margin-top:50px;
   border-radius:20px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+  box-shadow:0 15px 30px rgba(0,0,0,0.2);
   text-align:center;
 }
 
 .card h1{
-  font-size:24px;
+  font-size:26px;
   margin-bottom:10px;
+  color:#333;
 }
 
 .card p{
-  color:gray;
+  color:#777;
   font-size:14px;
-  margin-bottom:20px;
+  margin-bottom:25px;
 }
 
 .select-btn{
-  background:#e53935;
+  background:#ff4b2b;
   color:white;
   padding:18px;
   border:none;
@@ -61,7 +63,7 @@ body{
   font-size:18px;
   border-radius:12px;
   cursor:pointer;
-  box-shadow:0 6px 15px rgba(0,0,0,0.3);
+  box-shadow:0 8px 20px rgba(0,0,0,0.3);
   transition:0.3s;
   display:block;
 }
@@ -76,9 +78,9 @@ input[type="file"]{
 
 .footer{
   position:absolute;
-  bottom:10px;
+  bottom:15px;
   color:white;
-  font-size:12px;
+  font-size:13px;
 }
 </style>
 </head>
@@ -86,22 +88,22 @@ input[type="file"]{
 <body>
 
 <div class="header">
-📄 Doc Scanner Pro
+📄 Aamin PDF Studio
 </div>
 
 <div class="card">
-  <h1>JPG to PDF</h1>
-  <p>Convert images to PDF in seconds. Fast & Easy.</p>
+  <h1>Image to PDF Converter</h1>
+  <p>Convert your images into high-quality PDF instantly.</p>
 
   <label for="imageInput" class="select-btn">
-    Select Images & Download PDF
+    Select Images & Create PDF
   </label>
 
   <input type="file" id="imageInput" multiple accept="image/*">
 </div>
 
 <div class="footer">
-© 2026 Doc Scanner Pro
+© 2026 Aamin PDF Studio
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -136,7 +138,7 @@ document.getElementById("imageInput").addEventListener("change", function(event)
       loaded++;
 
       if(loaded === files.length){
-        doc.save("converted.pdf");
+        doc.save("Aamin-PDF-Studio.pdf");
       }
     }
 
