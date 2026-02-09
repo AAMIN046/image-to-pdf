@@ -32,13 +32,11 @@ button{
   color:white;
   border:none;
 }
-.preview{
-  margin-top:15px;
-}
 .preview img{
   width:100%;
   margin-top:10px;
   border-radius:8px;
+  filter: grayscale(100%);
 }
 </style>
 </head>
@@ -51,12 +49,12 @@ Doc Scanner Pro
 
 <div class="container">
 
-<input type="text" id="name" placeholder="Enter Your Name (optional)">
+<!-- Default Auto Name -->
+<input type="text" id="name" value="Scanned by Aamin046" placeholder="Enter Your Name">
 
-<!-- MULTIPLE ENABLED -->
 <input type="file" id="imageInput" accept="image/*" multiple>
 
-<div class="preview" id="previewContainer"></div>
+<div id="preview"></div>
 
 <button onclick="generatePDF()">Download PDF</button>
 
@@ -70,9 +68,8 @@ let uploadedImages = [];
 
 document.getElementById("imageInput").addEventListener("change", function(event){
   const files = event.target.files;
-  const previewContainer = document.getElementById("previewContainer");
-  previewContainer.innerHTML = "";
   uploadedImages = [];
+  document.getElementById("preview").innerHTML = "";
 
   if(files.length > 500){
     alert("Maximum 500 images allowed");
@@ -81,15 +78,13 @@ document.getElementById("imageInput").addEventListener("change", function(event)
 
   Array.from(files).forEach(file => {
     const reader = new FileReader();
-
     reader.onload = function(e){
       uploadedImages.push(e.target.result);
 
-      const img = document.createElement("img");
+      let img = document.createElement("img");
       img.src = e.target.result;
-      previewContainer.appendChild(img);
+      document.getElementById("preview").appendChild(img);
     }
-
     reader.readAsDataURL(file);
   });
 });
@@ -97,20 +92,18 @@ document.getElementById("imageInput").addEventListener("change", function(event)
 function generatePDF(){
 
   if(uploadedImages.length === 0){
-    alert("Please upload images first");
+    alert("Upload images first");
     return;
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'mm', 'a4');
+  const doc = new jsPDF('p','mm','a4');
   const name = document.getElementById("name").value;
 
   let pageWidth = doc.internal.pageSize.getWidth();
   let pageHeight = doc.internal.pageSize.getHeight();
 
-  let count = 0;
-
-  uploadedImages.forEach((image, index) => {
+  uploadedImages.forEach((image, index)=>{
 
     if(index !== 0){
       doc.addPage();
@@ -119,24 +112,21 @@ function generatePDF(){
     let img = new Image();
     img.src = image;
 
-    let imgWidth = img.width;
-    let imgHeight = img.height;
+    doc.addImage(image,'JPEG',0,0,pageWidth,pageHeight);
 
-    let ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-    let newWidth = imgWidth * ratio;
-    let newHeight = imgHeight * ratio;
-
-    let x = (pageWidth - newWidth) / 2;
-    let y = (pageHeight - newHeight) / 2;
-
-    doc.addImage(image, 'JPEG', x, y, newWidth, newHeight);
-
+    // Watermark
     if(name){
-      doc.setFontSize(14);
-      doc.text(name, 10, 15);
+      doc.setFontSize(30);
+      doc.setTextColor(150);
+      doc.text(name, pageWidth/2, pageHeight/2, {align:"center", angle:45});
     }
 
-    count++;
+    // Page Number
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text("Page " + (index+1) + " of " + uploadedImages.length, 
+             pageWidth/2, pageHeight-10, {align:"center"});
+
   });
 
   doc.save("scanned-document.pdf");
